@@ -27,12 +27,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Domain not allowed' }, { status: 403 });
     }
 
+    // Get Range header from incoming request
+    const rangeHeader = request.headers.get('Range');
+
+    // Build fetch headers
+    const fetchHeaders: HeadersInit = {
+      'User-Agent': 'Mozilla/5.0 (compatible; WebLinux/1.0)',
+    };
+
+    // Forward Range header if present
+    if (rangeHeader) {
+      fetchHeaders['Range'] = rangeHeader;
+    }
+
     // Fetch the ISO from the external server
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; WebLinux/1.0)',
-      },
+      headers: fetchHeaders,
     });
 
     if (!response.ok) {
@@ -47,18 +58,33 @@ export async function GET(request: NextRequest) {
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Range');
-    headers.set('Content-Type', response.headers.get('Content-Type') || 'application/octet-stream');
+    headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
 
+    // Forward content type
+    const contentType = response.headers.get('Content-Type');
+    if (contentType) {
+      headers.set('Content-Type', contentType);
+    }
+
+    // Forward Content-Length
     const contentLength = response.headers.get('Content-Length');
     if (contentLength) {
       headers.set('Content-Length', contentLength);
     }
 
+    // Forward Content-Range for partial responses
+    const contentRange = response.headers.get('Content-Range');
+    if (contentRange) {
+      headers.set('Content-Range', contentRange);
+    }
+
+    // Set Accept-Ranges to indicate range support
     headers.set('Accept-Ranges', 'bytes');
     headers.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
 
+    // Return with appropriate status (206 for partial content, 200 for full)
     return new NextResponse(response.body, {
-      status: 200,
+      status: response.status, // Will be 206 for partial, 200 for full
       headers,
     });
   } catch (error) {
