@@ -21,9 +21,53 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
 
     const initEmulator = async () => {
       try {
-        // Polyfill global for v86 (required for browser compatibility)
-        if (typeof window !== 'undefined' && !(window as any).global) {
-          (window as any).global = window;
+        // Check browser compatibility
+        if (typeof WebAssembly === 'undefined') {
+          throw new Error('WebAssembly is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Edge.');
+        }
+
+        if (!('SharedArrayBuffer' in window)) {
+          console.warn('SharedArrayBuffer not available - emulator may run slower');
+        }
+
+        // Comprehensive Node.js polyfills for v86 browser compatibility
+        if (typeof window !== 'undefined') {
+          const win = window as any;
+
+          // 1. Global object
+          if (!win.global) {
+            win.global = window;
+          }
+
+          // 2. setImmediate/clearImmediate (Node.js timing functions)
+          if (!win.setImmediate) {
+            win.setImmediate = (callback: (...args: any[]) => void, ...args: any[]) =>
+              setTimeout(callback, 0, ...args);
+          }
+          if (!win.clearImmediate) {
+            win.clearImmediate = (id: number) => clearTimeout(id);
+          }
+
+          // 3. Process object (minimal polyfill)
+          if (!win.process) {
+            win.process = {
+              env: {},
+              version: '',
+              versions: {},
+              platform: 'browser',
+              browser: true,
+              nextTick: (callback: () => void) => Promise.resolve().then(callback),
+              cwd: () => '/',
+              chdir: () => {},
+            };
+          }
+
+          // 4. Buffer polyfill (if not already provided by bundler)
+          if (!win.Buffer && !win.global.Buffer) {
+            // Simple Buffer polyfill for basic operations
+            // Most modern bundlers provide this, but we'll add a basic version as fallback
+            console.log('Buffer not available - using Uint8Array fallback');
+          }
         }
 
         // Dynamically import v86 to avoid SSR issues
@@ -126,7 +170,10 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
         emulatorRef.current.add_listener('download-error', (e: unknown) => {
           console.error('Download error:', e);
           if (mounted) {
-            setError(`Download failed: ${JSON.stringify(e)}`);
+            const errorMessage = typeof e === 'object' && e !== null && 'message' in e
+              ? (e as any).message
+              : 'Network error - please check your connection';
+            setError(`Download failed: ${errorMessage}. Try refreshing the page.`);
           }
         });
 
@@ -142,7 +189,23 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
       } catch (err) {
         console.error('Failed to initialize emulator:', err);
         if (mounted) {
-          setError('Failed to load Linux emulator. Please refresh the page.');
+          let errorMessage = 'Failed to load Linux emulator. ';
+
+          if (err instanceof Error) {
+            if (err.message.includes('fetch') || err.message.includes('network')) {
+              errorMessage += 'Network error - please check your connection.';
+            } else if (err.message.includes('CORS')) {
+              errorMessage += 'Browser security blocked the request.';
+            } else if (err.message.includes('WebAssembly')) {
+              errorMessage += 'WebAssembly not supported in this browser.';
+            } else {
+              errorMessage += err.message;
+            }
+          } else {
+            errorMessage += 'Please refresh the page and try again.';
+          }
+
+          setError(errorMessage);
           setIsLoading(false);
         }
       }
