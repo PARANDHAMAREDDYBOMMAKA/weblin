@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "mkdir -p public/build && cp node_modules/v86/build/*.wasm public/build/"
   },
   "dependencies": {
     "next": "16.1.1",
