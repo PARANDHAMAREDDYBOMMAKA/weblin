@@ -12,7 +12,7 @@ export default function LinuxPage() {
       id: 'tinycore' as const,
       name: 'TinyCore Linux',
       description: 'Ultra-lightweight, fastest boot time',
-      size: '~23MB',
+      size: '~25MB',
       recommended: true,
       speed: 'Fastest',
     },

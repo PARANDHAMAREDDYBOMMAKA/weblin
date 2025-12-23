@@ -28,12 +28,12 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
 
         // Configuration for different distros
         const distroConfigs = {
-          // TinyCore - Fastest option (only ~23MB)
+          // TinyCore - Fastest option (only ~25MB)
           tinycore: {
             cdrom: {
-              url: 'http://tinycorelinux.net/15.x/x86_64/release/TinyCorePure64-15.0.iso',
+              url: 'https://distro.ibiblio.org/tinycorelinux/16.x/x86_64/release/TinyCorePure64-16.2.iso',
               async: true,
-              size: 23 * 1024 * 1024,
+              size: 25 * 1024 * 1024,
             },
             memory_size: 128 * 1024 * 1024, // Only 128MB needed
             vga_memory_size: 2 * 1024 * 1024,
