@@ -84,12 +84,16 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
           return;
         }
 
+        // Helper function to create proxied URL
+        const proxyUrl = (originalUrl: string) =>
+          `/api/proxy-iso?url=${encodeURIComponent(originalUrl)}`;
+
         // Configuration for different distros
         const distroConfigs = {
           // TinyCore - Fastest option (only ~40MB)
           tinycore: {
             cdrom: {
-              url: 'https://distro.ibiblio.org/tinycorelinux/16.x/x86_64/release/TinyCorePure64-16.2.iso',
+              url: proxyUrl('https://distro.ibiblio.org/tinycorelinux/16.x/x86_64/release/TinyCorePure64-16.2.iso'),
               async: true,
               size: 40 * 1024 * 1024,
             },
@@ -100,7 +104,7 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
           // Alpine - Small and full-featured (~62MB)
           alpine: {
             cdrom: {
-              url: 'https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso',
+              url: proxyUrl('https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso'),
               async: true,
               size: 62 * 1024 * 1024,
             },
@@ -111,7 +115,7 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
           // Debian - Full-featured (~470MB)
           debian: {
             cdrom: {
-              url: 'https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-13.2.0-amd64-standard.iso',
+              url: proxyUrl('https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-13.2.0-amd64-standard.iso'),
               async: true,
               size: 470 * 1024 * 1024,
             },
@@ -122,7 +126,7 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
           // Arch Linux - Rolling release (~890MB)
           arch: {
             cdrom: {
-              url: 'https://mirror.arizona.edu/archlinux/iso/2025.12.01/archlinux-2025.12.01-x86_64.iso',
+              url: proxyUrl('https://mirror.arizona.edu/archlinux/iso/2025.12.01/archlinux-2025.12.01-x86_64.iso'),
               async: true,
               size: 890 * 1024 * 1024,
             },
