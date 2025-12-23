@@ -1,18 +1,20 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type V86 from 'v86';
+import type { DownloadProgressEvent } from 'v86';
 
 interface LinuxEmulatorProps {
-  distro?: 'alpine' | 'debian' | 'arch';
+  distro?: 'alpine' | 'tinycore' | 'debian' | 'arch';
 }
 
-export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps) {
+export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProps) {
   const screenRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStatus, setLoadingStatus] = useState('Initializing...');
-  const emulatorRef = useRef<any>(null);
+  const emulatorRef = useRef<V86 | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -26,14 +28,27 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
 
         // Configuration for different distros
         const distroConfigs = {
+          // TinyCore - Fastest option (only ~23MB)
+          tinycore: {
+            cdrom: {
+              url: 'http://tinycorelinux.net/15.x/x86_64/release/TinyCorePure64-15.0.iso',
+              async: true,
+              size: 23 * 1024 * 1024,
+            },
+            memory_size: 128 * 1024 * 1024, // Only 128MB needed
+            vga_memory_size: 2 * 1024 * 1024,
+            acpi: true, // Enable ACPI for better performance
+          },
+          // Alpine - Small and full-featured (~62MB)
           alpine: {
             cdrom: {
               url: 'https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-virt-3.21.0-x86_64.iso',
               async: true,
-              size: 62 * 1024 * 1024, // Helps with progress calculation
+              size: 62 * 1024 * 1024,
             },
-            memory_size: 256 * 1024 * 1024, // Reduced from 512MB for faster init
-            vga_memory_size: 2 * 1024 * 1024, // Reduced from 8MB
+            memory_size: 256 * 1024 * 1024,
+            vga_memory_size: 2 * 1024 * 1024,
+            acpi: true,
           },
           debian: {
             cdrom: {
@@ -70,11 +85,16 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
         });
 
         // Track download progress
-        emulatorRef.current.add_listener('download-progress', (e: any) => {
-          if (mounted) {
-            const percent = Math.round((e.loaded / e.total) * 100);
+        emulatorRef.current.add_listener('download-progress', (e: DownloadProgressEvent) => {
+          if (mounted && e.total > 0) {
+            const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
             setLoadingProgress(percent);
-            setLoadingStatus(`Downloading ${e.file_name}... ${percent}%`);
+            const fileSizeMB = (e.total / (1024 * 1024)).toFixed(1);
+            const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+            setLoadingStatus(`Downloading ${e.file_name} (${loadedMB}MB / ${fileSizeMB}MB)`);
+          } else if (mounted && e.lengthComputable === false) {
+            // For downloads without known size, show spinning loader
+            setLoadingStatus(`Downloading ${e.file_name}...`);
           }
         });
 
@@ -124,9 +144,11 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
               </div>
             )}
 
-            <p className="text-gray-500 text-xs mt-4">
-              {loadingProgress > 0 ? `${loadingProgress}% complete` : 'Initializing...'}
-            </p>
+            {loadingProgress > 0 && (
+              <p className="text-gray-400 text-xs mt-2">
+                {loadingProgress}% complete
+              </p>
+            )}
           </div>
         </div>
       )}

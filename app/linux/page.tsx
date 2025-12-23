@@ -4,30 +4,41 @@ import { useState } from 'react';
 import LinuxEmulator from '@/components/LinuxEmulator';
 
 export default function LinuxPage() {
-  const [selectedDistro, setSelectedDistro] = useState<'alpine' | 'debian' | 'arch'>('alpine');
+  const [selectedDistro, setSelectedDistro] = useState<'tinycore' | 'alpine' | 'debian' | 'arch'>('tinycore');
   const [isStarted, setIsStarted] = useState(false);
 
   const distros = [
     {
+      id: 'tinycore' as const,
+      name: 'TinyCore Linux',
+      description: 'Ultra-lightweight, fastest boot time',
+      size: '~23MB',
+      recommended: true,
+      speed: 'Fastest',
+    },
+    {
       id: 'alpine' as const,
       name: 'Alpine Linux',
       description: 'Lightweight, security-oriented distribution',
-      size: '~200MB',
-      recommended: true,
+      size: '~62MB',
+      recommended: false,
+      speed: 'Fast',
     },
     {
       id: 'debian' as const,
       name: 'Debian',
       description: 'Stable and versatile distribution',
-      size: '~800MB',
+      size: '~400MB',
       recommended: false,
+      speed: 'Slow',
     },
     {
       id: 'arch' as const,
       name: 'Arch Linux',
       description: 'Lightweight and flexible distribution',
-      size: '~900MB',
+      size: '~800MB',
       recommended: false,
+      speed: 'Very Slow',
     },
   ];
 
@@ -106,9 +117,20 @@ export default function LinuxPage() {
                 <p className="text-gray-300 text-sm mb-3">
                   {distro.description}
                 </p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Download size:</span>
-                  <span className="text-white font-semibold">{distro.size}</span>
+                <div className="space-y-1 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Download size:</span>
+                    <span className="text-white font-semibold">{distro.size}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Speed:</span>
+                    <span className={`font-semibold ${
+                      distro.speed === 'Fastest' ? 'text-green-400' :
+                      distro.speed === 'Fast' ? 'text-blue-400' :
+                      distro.speed === 'Slow' ? 'text-yellow-400' :
+                      'text-red-400'
+                    }`}>{distro.speed}</span>
+                  </div>
                 </div>
               </button>
             ))}
@@ -123,7 +145,7 @@ export default function LinuxPage() {
             Start {distros.find(d => d.id === selectedDistro)?.name}
           </button>
           <p className="text-gray-400 text-sm mt-4">
-            Note: Initial load may take 2-5 minutes depending on your connection
+            Note: TinyCore loads in ~30 seconds, Alpine in ~1-2 minutes, others may take 5+ minutes
           </p>
         </div>
 
