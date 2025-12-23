@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
+// Use Node.js runtime for better large file streaming support
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic'; // Disable caching for dynamic content
+export const maxDuration = 60; // Allow up to 60 seconds for large file transfers
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url');

@@ -140,6 +140,7 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
 
         setLoadingStatus('Initializing emulator...');
         console.log('Starting v86 emulator with config:', config);
+        console.log('ISO URL:', config.cdrom?.url);
         console.log('Screen container:', screenRef.current);
 
         emulatorRef.current = new V86({
@@ -159,15 +160,20 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
 
         // Track all events for debugging
         emulatorRef.current.add_listener('download-progress', (e: DownloadProgressEvent) => {
-          console.log('Download progress:', e);
-          if (mounted && e.total > 0) {
+          console.log('Download progress:', e.file_name, `${e.loaded}/${e.total}`);
+
+          // Only update UI for ISO downloads (skip BIOS/wasm files)
+          const isIsoDownload = e.file_name.includes('proxy-iso');
+
+          if (mounted && e.total > 0 && isIsoDownload) {
             const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
             setLoadingProgress(percent);
             const fileSizeMB = (e.total / (1024 * 1024)).toFixed(1);
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
-            setLoadingStatus(`Downloading ${e.file_name} (${loadedMB}MB / ${fileSizeMB}MB)`);
-          } else if (mounted) {
-            setLoadingStatus(`Downloading ${e.file_name}...`);
+            setLoadingStatus(`Downloading Linux ISO (${loadedMB}MB / ${fileSizeMB}MB)`);
+          } else if (mounted && isIsoDownload) {
+            const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+            setLoadingStatus(`Downloading Linux ISO (${loadedMB}MB)...`);
           }
         });
 
