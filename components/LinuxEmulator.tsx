@@ -21,6 +21,11 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
 
     const initEmulator = async () => {
       try {
+        // Polyfill global for v86 (required for browser compatibility)
+        if (typeof window !== 'undefined' && !(window as any).global) {
+          (window as any).global = window;
+        }
+
         // Dynamically import v86 to avoid SSR issues
         const V86 = (await import('v86')).default;
 
