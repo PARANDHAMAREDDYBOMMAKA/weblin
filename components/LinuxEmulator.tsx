@@ -28,12 +28,12 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
 
         // Configuration for different distros
         const distroConfigs = {
-          // TinyCore - Fastest option (only ~25MB)
+          // TinyCore - Fastest option (only ~40MB)
           tinycore: {
             cdrom: {
               url: 'https://distro.ibiblio.org/tinycorelinux/16.x/x86_64/release/TinyCorePure64-16.2.iso',
               async: true,
-              size: 25 * 1024 * 1024,
+              size: 40 * 1024 * 1024,
             },
             memory_size: 128 * 1024 * 1024, // Only 128MB needed
             vga_memory_size: 2 * 1024 * 1024,
@@ -42,7 +42,7 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
           // Alpine - Small and full-featured (~62MB)
           alpine: {
             cdrom: {
-              url: 'https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-virt-3.21.0-x86_64.iso',
+              url: 'https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso',
               async: true,
               size: 62 * 1024 * 1024,
             },
@@ -50,27 +50,34 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
             vga_memory_size: 2 * 1024 * 1024,
             acpi: true,
           },
+          // Debian - Full-featured (~470MB)
           debian: {
             cdrom: {
-              url: 'https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-12.4.0-amd64-standard.iso',
+              url: 'https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-13.2.0-amd64-standard.iso',
               async: true,
+              size: 470 * 1024 * 1024,
             },
             memory_size: 1024 * 1024 * 1024,
             vga_memory_size: 16 * 1024 * 1024,
+            acpi: true,
           },
+          // Arch Linux - Rolling release (~890MB)
           arch: {
             cdrom: {
-              url: 'https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso',
+              url: 'https://mirror.arizona.edu/archlinux/iso/2025.12.01/archlinux-2025.12.01-x86_64.iso',
               async: true,
+              size: 890 * 1024 * 1024,
             },
             memory_size: 1024 * 1024 * 1024,
             vga_memory_size: 16 * 1024 * 1024,
+            acpi: true,
           },
         };
 
         const config = distroConfigs[distro];
 
-        setLoadingStatus('Downloading system files...');
+        setLoadingStatus('Initializing emulator...');
+        console.log('Starting v86 emulator with config:', config);
 
         emulatorRef.current = new V86({
           screen_container: screenRef.current,
@@ -84,25 +91,34 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
           autostart: true,
         });
 
-        // Track download progress
+        console.log('V86 instance created');
+
+        // Track all events for debugging
         emulatorRef.current.add_listener('download-progress', (e: DownloadProgressEvent) => {
+          console.log('Download progress:', e);
           if (mounted && e.total > 0) {
             const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
             setLoadingProgress(percent);
             const fileSizeMB = (e.total / (1024 * 1024)).toFixed(1);
             const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
             setLoadingStatus(`Downloading ${e.file_name} (${loadedMB}MB / ${fileSizeMB}MB)`);
-          } else if (mounted && e.lengthComputable === false) {
-            // For downloads without known size, show spinning loader
+          } else if (mounted) {
             setLoadingStatus(`Downloading ${e.file_name}...`);
           }
         });
 
+        emulatorRef.current.add_listener('download-error', (e: unknown) => {
+          console.error('Download error:', e);
+          if (mounted) {
+            setError(`Download failed: ${JSON.stringify(e)}`);
+          }
+        });
+
         emulatorRef.current.add_listener('emulator-ready', () => {
+          console.log('Emulator ready');
           if (mounted) {
             setLoadingStatus('Starting Linux...');
             setLoadingProgress(100);
-            // Give a moment for boot to start before hiding loader
             setTimeout(() => setIsLoading(false), 2000);
           }
         });
