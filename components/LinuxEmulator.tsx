@@ -10,6 +10,8 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
   const screenRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
   const emulatorRef = useRef<any>(null);
 
   useEffect(() => {
@@ -26,11 +28,12 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
         const distroConfigs = {
           alpine: {
             cdrom: {
-              url: 'https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-virt-3.19.0-x86_64.iso',
+              url: 'https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86_64/alpine-virt-3.21.0-x86_64.iso',
               async: true,
+              size: 62 * 1024 * 1024, // Helps with progress calculation
             },
-            memory_size: 512 * 1024 * 1024,
-            vga_memory_size: 8 * 1024 * 1024,
+            memory_size: 256 * 1024 * 1024, // Reduced from 512MB for faster init
+            vga_memory_size: 2 * 1024 * 1024, // Reduced from 8MB
           },
           debian: {
             cdrom: {
@@ -52,6 +55,8 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
 
         const config = distroConfigs[distro];
 
+        setLoadingStatus('Downloading system files...');
+
         emulatorRef.current = new V86({
           screen_container: screenRef.current,
           bios: {
@@ -64,9 +69,21 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
           autostart: true,
         });
 
+        // Track download progress
+        emulatorRef.current.add_listener('download-progress', (e: any) => {
+          if (mounted) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            setLoadingProgress(percent);
+            setLoadingStatus(`Downloading ${e.file_name}... ${percent}%`);
+          }
+        });
+
         emulatorRef.current.add_listener('emulator-ready', () => {
           if (mounted) {
-            setIsLoading(false);
+            setLoadingStatus('Starting Linux...');
+            setLoadingProgress(100);
+            // Give a moment for boot to start before hiding loader
+            setTimeout(() => setIsLoading(false), 2000);
           }
         });
 
@@ -92,11 +109,24 @@ export default function LinuxEmulator({ distro = 'alpine' }: LinuxEmulatorProps)
   return (
     <div className="w-full h-full flex flex-col">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-10">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-white text-lg">Loading Linux {distro}...</p>
-            <p className="text-gray-400 text-sm mt-2">This may take a few minutes</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90 z-10">
+          <div className="text-center max-w-md w-full px-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-6"></div>
+            <p className="text-white text-xl font-semibold mb-2">Loading Linux {distro}</p>
+            <p className="text-gray-300 text-sm mb-4">{loadingStatus}</p>
+
+            {loadingProgress > 0 && (
+              <div className="w-full bg-gray-700 rounded-full h-2.5 mb-2">
+                <div
+                  className="bg-green-500 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${loadingProgress}%` }}
+                ></div>
+              </div>
+            )}
+
+            <p className="text-gray-500 text-xs mt-4">
+              {loadingProgress > 0 ? `${loadingProgress}% complete` : 'Initializing...'}
+            </p>
           </div>
         </div>
       )}
