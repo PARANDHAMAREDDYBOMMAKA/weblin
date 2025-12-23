@@ -1,5 +1,6 @@
 declare module 'v86' {
   export interface V86Config {
+    wasm_path?: string;
     screen_container?: HTMLElement | null;
     bios?: {
       url: string;

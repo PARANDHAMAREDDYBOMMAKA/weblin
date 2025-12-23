@@ -24,7 +24,16 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
         // Dynamically import v86 to avoid SSR issues
         const V86 = (await import('v86')).default;
 
-        if (!mounted || !screenRef.current) return;
+        if (!mounted || !screenRef.current) {
+          console.log('Not mounted or screen ref not ready');
+          return;
+        }
+
+        // Ensure the screen container is fully rendered
+        if (!screenRef.current.isConnected) {
+          console.log('Screen container not connected to DOM');
+          return;
+        }
 
         // Configuration for different distros
         const distroConfigs = {
@@ -78,8 +87,10 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
 
         setLoadingStatus('Initializing emulator...');
         console.log('Starting v86 emulator with config:', config);
+        console.log('Screen container:', screenRef.current);
 
         emulatorRef.current = new V86({
+          wasm_path: '/build/v86.wasm',
           screen_container: screenRef.current,
           bios: {
             url: '/v86/seabios.bin',
@@ -181,8 +192,16 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
       <div
         ref={screenRef}
         className="flex-1 w-full bg-black"
-        style={{ minHeight: '600px' }}
-      />
+        style={{
+          minHeight: '600px',
+          width: '100%',
+          height: '100%',
+          position: 'relative'
+        }}
+      >
+        <div style={{ overflow: 'hidden', width: '100%', height: '100%' }}></div>
+        <canvas style={{ display: 'none' }}></canvas>
+      </div>
     </div>
   );
 }
