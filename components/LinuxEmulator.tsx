@@ -91,49 +91,48 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
         // Configuration for different distros
         // IMPORTANT: v86 only supports 32-bit (i686) architecture, NOT 64-bit (x86_64)
         const distroConfigs = {
-          // TinyCore - Fastest option, 32-bit version (only ~23MB)
+          // TinyCore - Fastest option with GUI (CorePlus includes GUI options)
           tinycore: {
             cdrom: {
-              url: proxyUrl('https://distro.ibiblio.org/tinycorelinux/16.x/x86/release/TinyCore-16.2.iso'),
+              url: proxyUrl('https://distro.ibiblio.org/tinycorelinux/16.x/x86/release/CorePlus-16.2.iso'),
               async: true,
-              size: 23 * 1024 * 1024,
-            },
-            memory_size: 128 * 1024 * 1024, // Only 128MB needed
-            vga_memory_size: 2 * 1024 * 1024,
-            acpi: true, // Enable ACPI for better performance
-          },
-          // Alpine - Small and full-featured, 32-bit version (~52MB)
-          alpine: {
-            cdrom: {
-              url: proxyUrl('https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86/alpine-virt-3.21.2-x86.iso'),
-              async: true,
-              size: 52 * 1024 * 1024,
+              size: 248 * 1024 * 1024,
             },
             memory_size: 256 * 1024 * 1024,
-            vga_memory_size: 2 * 1024 * 1024,
-            acpi: true,
-          },
-          // Debian - Full-featured, 32-bit version (~350MB)
-          debian: {
-            cdrom: {
-              url: proxyUrl('https://cdimage.debian.org/debian-cd/current-live/i386/iso-hybrid/debian-live-13.2.0-i386-standard.iso'),
-              async: true,
-              size: 350 * 1024 * 1024,
-            },
-            memory_size: 512 * 1024 * 1024, // 32-bit needs less RAM
             vga_memory_size: 8 * 1024 * 1024,
             acpi: true,
           },
-          // DSL (Damn Small Linux) - Tiny classic distro (~50MB)
-          // Note: Arch Linux dropped 32-bit support, so replacing with DSL
+          // Puppy Linux - Small, fast, full GUI desktop (32-bit)
+          alpine: {
+            cdrom: {
+              url: proxyUrl('https://distro.ibiblio.org/puppylinux/puppy-slacko/slacko-7.0/32/slacko-7.0-PAE.iso'),
+              async: true,
+              size: 320 * 1024 * 1024,
+            },
+            memory_size: 512 * 1024 * 1024,
+            vga_memory_size: 16 * 1024 * 1024,
+            acpi: true,
+          },
+          // Debian - Full desktop environment (XFCE)
+          debian: {
+            cdrom: {
+              url: proxyUrl('https://cdimage.debian.org/debian-cd/current-live/i386/iso-hybrid/debian-live-13.2.0-i386-xfce.iso'),
+              async: true,
+              size: 2900 * 1024 * 1024,
+            },
+            memory_size: 1024 * 1024 * 1024,
+            vga_memory_size: 32 * 1024 * 1024,
+            acpi: true,
+          },
+          // Damn Small Linux - Classic tiny distro with GUI
           arch: {
             cdrom: {
               url: proxyUrl('http://www.damnsmalllinux.org/dsl-4.11.rc2.iso'),
               async: true,
               size: 50 * 1024 * 1024,
             },
-            memory_size: 128 * 1024 * 1024,
-            vga_memory_size: 2 * 1024 * 1024,
+            memory_size: 256 * 1024 * 1024,
+            vga_memory_size: 8 * 1024 * 1024,
             acpi: true,
           },
         };
