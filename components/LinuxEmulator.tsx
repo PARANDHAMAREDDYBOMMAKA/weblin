@@ -89,49 +89,51 @@ export default function LinuxEmulator({ distro = 'tinycore' }: LinuxEmulatorProp
           `/api/proxy-iso?url=${encodeURIComponent(originalUrl)}`;
 
         // Configuration for different distros
+        // IMPORTANT: v86 only supports 32-bit (i686) architecture, NOT 64-bit (x86_64)
         const distroConfigs = {
-          // TinyCore - Fastest option (only ~40MB)
+          // TinyCore - Fastest option, 32-bit version (only ~23MB)
           tinycore: {
             cdrom: {
-              url: proxyUrl('https://distro.ibiblio.org/tinycorelinux/16.x/x86_64/release/TinyCorePure64-16.2.iso'),
+              url: proxyUrl('https://distro.ibiblio.org/tinycorelinux/16.x/x86/release/TinyCore-16.2.iso'),
               async: true,
-              size: 40 * 1024 * 1024,
+              size: 23 * 1024 * 1024,
             },
             memory_size: 128 * 1024 * 1024, // Only 128MB needed
             vga_memory_size: 2 * 1024 * 1024,
             acpi: true, // Enable ACPI for better performance
           },
-          // Alpine - Small and full-featured (~62MB)
+          // Alpine - Small and full-featured, 32-bit version (~52MB)
           alpine: {
             cdrom: {
-              url: proxyUrl('https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso'),
+              url: proxyUrl('https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/x86/alpine-virt-3.21.2-x86.iso'),
               async: true,
-              size: 62 * 1024 * 1024,
+              size: 52 * 1024 * 1024,
             },
             memory_size: 256 * 1024 * 1024,
             vga_memory_size: 2 * 1024 * 1024,
             acpi: true,
           },
-          // Debian - Full-featured (~470MB)
+          // Debian - Full-featured, 32-bit version (~350MB)
           debian: {
             cdrom: {
-              url: proxyUrl('https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-13.2.0-amd64-standard.iso'),
+              url: proxyUrl('https://cdimage.debian.org/debian-cd/current-live/i386/iso-hybrid/debian-live-13.2.0-i386-standard.iso'),
               async: true,
-              size: 470 * 1024 * 1024,
+              size: 350 * 1024 * 1024,
             },
-            memory_size: 1024 * 1024 * 1024,
-            vga_memory_size: 16 * 1024 * 1024,
+            memory_size: 512 * 1024 * 1024, // 32-bit needs less RAM
+            vga_memory_size: 8 * 1024 * 1024,
             acpi: true,
           },
-          // Arch Linux - Rolling release (~890MB)
+          // DSL (Damn Small Linux) - Tiny classic distro (~50MB)
+          // Note: Arch Linux dropped 32-bit support, so replacing with DSL
           arch: {
             cdrom: {
-              url: proxyUrl('https://mirror.arizona.edu/archlinux/iso/2025.12.01/archlinux-2025.12.01-x86_64.iso'),
+              url: proxyUrl('http://www.damnsmalllinux.org/dsl-4.11.rc2.iso'),
               async: true,
-              size: 890 * 1024 * 1024,
+              size: 50 * 1024 * 1024,
             },
-            memory_size: 1024 * 1024 * 1024,
-            vga_memory_size: 16 * 1024 * 1024,
+            memory_size: 128 * 1024 * 1024,
+            vga_memory_size: 2 * 1024 * 1024,
             acpi: true,
           },
         };
